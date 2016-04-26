@@ -92,7 +92,7 @@ def picard_engage(u, s, J, N):
 
 u = picard_engage(u, s, J, N)
 
-# plot animation of solution as time elapses
+# Create an animation of the solution as time elapses
 fig, ax = plt.subplots()
 ax.set_xlabel('X')
 ax.set_ylabel('u')
@@ -102,7 +102,6 @@ def animate(i):
     ax.set_title("n = %d" % i)
     wave.set_ydata(u[i,:])  # update the data
     return wave,
-
 
 # Init only required for blitting to give a clean slate.
 def init():
