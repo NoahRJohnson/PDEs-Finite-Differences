@@ -20,7 +20,7 @@ X = np.arange(x_start, x_end + dx, dx)  # 1D x dimension
 T = np.arange(t_start, t_end + dt, dt)  # 1D t dimension
 
 J, N = X.shape[0], T.shape[0] # number of discrete x-axis and t-axis elements
-print J, N
+#print J, N
 
 
 def phi_j(j): #initial condition: u(x,0)
@@ -59,14 +59,6 @@ ax2.set_title("n = 2")
 ax2.plot(u[1])
 
 plt.show()
-'''
-size = 10
-plt.figure(figsize=(size, size))
-plt.plot(X, u[:,0])
-plt.xlim(xmin=x_start, xmax=x_end)
-plt.ylim(ymin=0)
-plt.title('initial condition')
-plt.show()'''
 #pyplot.savefig("test_0.png")
 
 def picard_engage(u, s, J, N):
@@ -111,3 +103,5 @@ def init():
 ani = animation.FuncAnimation(fig, animate, N, init_func=init,
                               interval=10000/N, blit=False, repeat=False)
 plt.show()
+
+print "u(3,3) = %f" % u[N-1,3]
