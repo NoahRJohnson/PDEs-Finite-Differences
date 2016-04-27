@@ -8,8 +8,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 
-dt = 0.5
-dx = 1.0
+dt = 0.25
+dx = 0.25
 c = 1
 s = c**2 * dt**2 / dx**2
 
