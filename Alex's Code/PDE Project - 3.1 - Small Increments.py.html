@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[147]:
+# In[141]:
 
 import math
 import numpy as np
@@ -21,9 +21,9 @@ def psi(x):
     return 0
 
 # problem setup:
-dx = 1
-dt = 0.5
-c  = 1
+dx = .05
+dt = 0.1
+c  = dx
 interval = (0,5+1)
 left_boundary  = 0
 right_boundary = 0
@@ -83,7 +83,7 @@ def run(steps):
     return history
 
 
-# In[148]:
+# In[142]:
 
 steps = 2000
 U = run(steps)
@@ -92,7 +92,7 @@ U = run(steps)
 print "ready"
 
 
-# In[149]:
+# In[143]:
 
 fig, ax = plt.subplots()
 ax.set_ylim([-40,40])
