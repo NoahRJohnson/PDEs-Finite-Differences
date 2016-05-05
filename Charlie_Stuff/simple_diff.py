@@ -3,14 +3,15 @@
 equation with Dirichlet Boundary Conditions. Contains a FTCS and CTCS 
 implentation."""
 import numpy
-from numpy.linalg import inv
+from numpy.linalg import solve
+from scipy.sparse import diags
 from matplotlib import pyplot
 
-dx = 1.0  # separation between points in x dimension
+dx = 1  # separation between points in x dimension
 x_start, x_end = 0.0, 5.0  # x-bounds
 x = numpy.arange(x_start, x_end + dx, dx)  # 1D x dimension
 
-dt =  0.5 # t separation steps for stability
+dt =  dx**2/2 # t separation steps for stability
 t_start, t_end = 0.0, 3.0  # t-bounds
 t = numpy.arange(t_start, t_end + dt, dt)  # 1D t dimension
 
@@ -27,7 +28,7 @@ def phi_0(x):
     return u
 
 
-def diff_forward(u, t, dt, dx):
+def diff_forward(u, t, dt, dx, bd = 'Dirichlet'):
     """Implements a simple forward time centered space scheme for solving the
     diffusion equation for the Dirchlet Boundary conditions: u(0, t) = 0 and 
     u(l,t) = 0.
@@ -38,19 +39,31 @@ def diff_forward(u, t, dt, dx):
     t -- t-dimension linear array
     dt -- step distance between points in t
     dx -- step distance between points in x
+    bd -- boundary data. Can be Dirichlet, Neumann, or Mixed. Dirichlet by 
+          default
     """
 
     for t in t:
         un = u.copy()
         for i in range(1, len(u) - 1):
             u[i] = dt/dx**2 * (un[i+1] - 2*un[i] + un[i-1]) + un[i]
-        u[0] = 0
-        u[-1] = 0
-
+        # enforce appropriate boundary conditions
+        if bd == 'Dirichlet':
+            u[0] = 0
+            u[-1] = 0
+        elif bd == 'Neumann':
+            u[0] = dt/dx**2 * 2 * (un[1] - un[0]) + un[0]
+            u[-1] = dt/dx**2 * 2 * (un[-2] - un[-1]) + un[-1]
+        elif bd == 'Mixed':
+            u[0] = 0
+            u[-1] = dt/dx**2 * 2 * (un[-2] - un[-1]) + un[-1]
+        else:
+            raise ValueError("Invalid Boundary Condition")
+        
     return u
 
 
-def diff_center(u, t, dt, dx):
+def diff_center(u, t, dt, dx, bd='Dirichlet'):
     """Implements a simple centered time and centered space scheme for solving
     the diffusion equation for the Dirchlet Boundary conditions: u(0, t) = 0 
     and u(l,t) = 0.
@@ -61,6 +74,8 @@ def diff_center(u, t, dt, dx):
     t -- t-dimension linear array
     dt -- step distance between points in t
     dx -- step distance between points in x
+    bd -- boundary data. Can be Dirichlet, Neumann, or Mixed. Dirichlet by 
+          default
     """
 
     for i,t in enumerate(t):
@@ -69,31 +84,40 @@ def diff_center(u, t, dt, dx):
             un = u.copy()
             for i in range(1, len(u) - 1):
                 u[i] = dt/dx**2 * (un[i+1] - 2*un[i] + un[i-1]) + un[i]
-            u[0] = 0
-            u[-1] = 0
+            # enforce appropriate boundary conditions
+            if bd == 'Dirichlet':
+                u[0] = 0
+                u[-1] = 0
+            elif bd == 'Neumann':
+                u[0] = dt/dx**2 * 2 * (un[1] - un[0]) + un[0]
+                u[-1] = dt/dx**2 * 2 * (un[-2] - un[-1]) + un[-1]
+            elif bd == 'Mixed':
+                u[0] = 0
+                u[-1] = dt/dx**2 * 2 * (un[-2] - un[-1]) + un[-1]
+            else:
+                raise ValueError("Invalid Boundary Condition")
         else:
             un2 = u.copy()
             for i in range(1, len(u) - 1):
                 u[i] = 2 * dt/dx**2 * (un2[i+1] - 2*un2[i] + un2[i-1]) + un[i]
+            # enforce appropriate boundary conditions
+            if bd == 'Dirichlet':
+                u[0] = 0
+                u[-1] = 0
+            elif bd == 'Neumann':
+                u[0] = dt/dx**2 * 2 * (un2[1] - un2[0]) + un[0]
+                u[-1] = dt/dx**2 * 2 * (un2[-2] - un2[-1]) + un[-1]
+            elif bd == 'Mixed':
+                u[0] = 0
+                u[-1] = dt/dx**2 * 2 * (un2[-2] - un2[-1]) + un[-1]
+            else:
+                raise ValueError("Invalid Boundary Condition")
             un = un2
 
     return u
 
 
-def tridiag(a, b, c, k1=-1, k2=0, k3=1):
-    """Function used to create a tridiagonal matrix for use in the Crank-
-    Nicolson scheme.
-
-    Arguments
-    ---------
-    a, b, c -- the lower, center, and upper diagonal elements (arrays)
-    k1, k2, k3 -- indicies of the diagonal. Centered by default
-    """
-
-    return numpy.diag(a, k1) + numpy.diag(b, k2) + numpy.diag(c, k3)
-
-
-def diff_crank_nicolson(u, t, dt, dx):
+def diff_crank_nicolson(u, t, dt, dx, bd='Dirichlet'):
     """Implements a Crank-Nicolson scheme for solving the diffusion equation 
     for the Dirchlet Boundary conditions: u(0, t) = 0 and u(l,t) = 0.
 
@@ -103,37 +127,27 @@ def diff_crank_nicolson(u, t, dt, dx):
     t -- t-dimension linear array
     dt -- step distance between points in t
     dx -- step distance between points in x
+    bd -- boundary data. Can be Dirichlet, Neumann, or Mixed. Dirichlet by 
+          default
     """
 
     s = dt/dx**2
     n = len(u)
+    u = numpy.array([u]).T
 
-    # create matrices for linear system with coefficients
-    a0 = numpy.ones(n) * (2 + 2*s)
-    a1 = numpy.ones(n-1) * -s
-    A = inv(tridiag(a1, a0, a1))
+    # create matrices for linear system
+    A = diags([-s, 2*(1+s), -s], [-1, 0, 1], shape=(n-2, n-2)).toarray()
+    B = diags([s, 2*(1-s), s], [-1, 0, 1], shape=(n-2, n-2)).toarray()
 
-    b0 = numpy.ones(n) * (2 - 2*s)
-    b1 = numpy.ones(n-1) * s
-    B = tridiag(b1, b0, b1)
-
-    # tranpose u into column vector
-    u = numpy.array([u]).T   
-   
     for i, t in enumerate(t):
-        un = u.copy()
-        
-        if i == 0:
-            u_rhs = numpy.dot(B, un)
-            u = numpy.dot(A, u_rhs)
-            u[0,0] = 0
-            u[-1,0] = 0
+        un = u.copy()  # create a copy to work wth
+            u_rhs = numpy.dot(B, un[1:-1])
+            u[1:-1] = solve(A, u_rhs)
+            if i == 0 and bd == 'Dirichlet':            
+                u[0], u[-1] = 0, 0  # enforce boundary
+       
 
-        else:
-            u_rhs = numpy.dot(B, un)
-            u = numpy.dot(A, u_rhs)
-
-    return u.T
+    return u
 
 # set initial conditions
 u_0 = phi_0(x)
@@ -143,10 +157,9 @@ u3 = u_0.copy()
 
 
 # apply forward solver
-u_forward = diff_forward(u1, t, dt, dx)
-u_center = diff_center(u2, t, dt, dx)
-u_cn = diff_crank_nicolson(u3, t, dt, dx)[0]
-print(u_cn)
+u_forward = diff_forward(u1, t, dt, dx, bd='Mixed')
+u_center = diff_center(u2, t, dt, dx, bd='Mixed')
+# u_cn = diff_crank_nicolson(u3, t, dt, dx)
 
 # plot to initial conditions and forward solution
 size = 10
@@ -154,7 +167,7 @@ pyplot.figure(figsize=(size, size))
 pyplot.plot(x, u_0, label="$\\phi(x)$")
 pyplot.plot(x, u_forward, label="$u(x,3)$ forward")
 pyplot.plot(x, u_center, label="$u(x,3)$ center")
-pyplot.plot(x, u_cn, label="$u(x,3)$ Crank-Nicolson")
+# pyplot.plot(x, u_cn, label="$u(x,3)$ Crank-Nicolson")
 pyplot.xlim(xmin=x_start, xmax=x_end)
 pyplot.ylim(ymin=0, ymax=30)
 pyplot.legend()
