@@ -167,7 +167,7 @@ def diff_crank_nicolson(u, t, dt, dx, theta=0.5, bd='Dirichlet'):
     elif bd == 'Neumann':
         # create Neumann matrices for linear system on lhs
         A = diags([-theta*s, (1+2*theta*s), -theta*s], [-1, 0, 1],
-                    shape=(n-1, n)).toarray()
+                    shape=(n, n)).toarray()
         A[0,1] *= 2
         A[-1,-2] *= 2
         # create rhs matrix
@@ -191,16 +191,18 @@ def diff_crank_nicolson(u, t, dt, dx, theta=0.5, bd='Dirichlet'):
         B = diags([alpha*s, (1-2*alpha*s), alpha*s], [2, 1, 0],
                     shape=(n-1, n)).toarray()
         B[-1,-2] *= 2
-        print(B)
+        
         
         for i, t in enumerate(t):
             if i == 0:
-                B[1,0] = s*alpha
+                B[0,0] = s*alpha
             else:
-                B[1,0] = 0
+                B[0,0] = 0
             un = u.copy()
             u_rhs = numpy.dot(B, un)
             u = lsqr(A, u_rhs)[0]
+    else:
+        raise ValueError("Invalid Boundary Condition")
 
     return u
 
@@ -212,9 +214,9 @@ u3 = u_0.copy()
 
 
 # apply forward solver
-u_forward = diff_forward(u1, t, dt, dx, bd='Mixed')
-u_center = diff_center(u2, t, dt, dx, bd='Mixed')
-u_cn = diff_crank_nicolson(u3, t, dt, dx, theta=0.0, bd='Mixed')
+u_forward = diff_forward(u1, t, dt, dx, bd='Dirichlet')
+u_center = diff_center(u2, t, dt, dx, bd='Dirichlet')
+u_cn = diff_crank_nicolson(u3, t, dt, dx, theta=0.5, bd='Dirichlet')
 
 # plot to initial conditions and forward solution
 size = 10
@@ -226,4 +228,4 @@ pyplot.plot(x, u_cn, label="$u(x,3)$ Crank-Nicolson")
 pyplot.xlim(xmin=x_start, xmax=x_end)
 pyplot.ylim(ymin=0, ymax=30)
 pyplot.legend()
-pyplot.savefig("test_diff.png")
+pyplot.savefig("Dirichlet_diff.png")
