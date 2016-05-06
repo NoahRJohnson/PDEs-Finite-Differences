@@ -5,6 +5,7 @@ implentation."""
 import numpy
 from numpy.linalg import solve
 from scipy.sparse import diags
+from scipy.sparse.linalg import lsqr
 from matplotlib import pyplot
 
 dx = 1  # separation between points in x dimension
@@ -84,6 +85,7 @@ def diff_center(u, t, dt, dx, bd='Dirichlet'):
             un = u.copy()
             for i in range(1, len(u) - 1):
                 u[i] = dt/dx**2 * (un[i+1] - 2*un[i] + un[i-1]) + un[i]
+
             # enforce appropriate boundary conditions
             if bd == 'Dirichlet':
                 u[0] = 0
@@ -100,6 +102,7 @@ def diff_center(u, t, dt, dx, bd='Dirichlet'):
             un2 = u.copy()
             for i in range(1, len(u) - 1):
                 u[i] = 2 * dt/dx**2 * (un2[i+1] - 2*un2[i] + un2[i-1]) + un[i]
+
             # enforce appropriate boundary conditions
             if bd == 'Dirichlet':
                 u[0] = 0
@@ -117,7 +120,7 @@ def diff_center(u, t, dt, dx, bd='Dirichlet'):
     return u
 
 
-def diff_crank_nicolson(u, t, dt, dx, bd='Dirichlet'):
+def diff_crank_nicolson(u, t, dt, dx, theta=0.5, bd='Dirichlet'):
     """Implements a Crank-Nicolson scheme for solving the diffusion equation 
     for the Dirchlet Boundary conditions: u(0, t) = 0 and u(l,t) = 0.
 
@@ -127,25 +130,77 @@ def diff_crank_nicolson(u, t, dt, dx, bd='Dirichlet'):
     t -- t-dimension linear array
     dt -- step distance between points in t
     dx -- step distance between points in x
+    theta -- theta value used in shceme. Between 0 and 1. Theta 0.5 default
     bd -- boundary data. Can be Dirichlet, Neumann, or Mixed. Dirichlet by 
           default
     """
+    if 0 > theta or  theta > 1:
+        raise ValueError("theta must be between 0 and 1")
+    else:
+        pass
 
     s = dt/dx**2
     n = len(u)
     u = numpy.array([u]).T
+    alpha = 1 - theta
 
-    # create matrices for linear system
-    A = diags([-s, 2*(1+s), -s], [-1, 0, 1], shape=(n-2, n-2)).toarray()
-    B = diags([s, 2*(1-s), s], [-1, 0, 1], shape=(n-2, n-2)).toarray()
+    if bd == 'Dirichlet':
+        # create matrices for linear system
+        A = diags([-theta*s, (1+2*theta*s), -theta*s], [2, 1, 0],
+                    shape=(n-2, n)).toarray()
+        A[0,0] = 0
+        A[-1,-1] = 0
+        B = diags([alpha*s, (1-2*alpha*s), alpha*s], [2, 1, 0],
+                    shape=(n-2, n)).toarray()
+        # step through time
+        for i, t in enumerate(t):
+            if i == 0:            
+                B[0,0] = s*alpha
+                B[-1,-1] = s*alpha
+            else:
+                B[0,0] = 0
+                B[-1,-1] = 0
+            un = u.copy()  # create a copy to work wth
+            u_rhs = numpy.dot(B, un)
+            u = lsqr(A,u_rhs)[0]  # least squared used since n x n-2 matrix
 
-    for i, t in enumerate(t):
-        un = u.copy()  # create a copy to work wth
-            u_rhs = numpy.dot(B, un[1:-1])
-            u[1:-1] = solve(A, u_rhs)
-            if i == 0 and bd == 'Dirichlet':            
-                u[0], u[-1] = 0, 0  # enforce boundary
-       
+    elif bd == 'Neumann':
+        # create Neumann matrices for linear system on lhs
+        A = diags([-theta*s, (1+2*theta*s), -theta*s], [-1, 0, 1],
+                    shape=(n-1, n)).toarray()
+        A[0,1] *= 2
+        A[-1,-2] *= 2
+        # create rhs matrix
+        B = diags([alpha*s, (1-2*alpha*s), alpha*s], [-1, 0, 1],
+                    shape=(n, n)).toarray()
+        B[0,1] *= 2
+        B[-1,-2] *= 2
+        # step through time
+        for i, t in enumerate(t):
+            un = u.copy()
+            u_rhs = numpy.dot(B, un)
+            u = solve(A, u_rhs)
+
+    elif bd == 'Mixed':
+        # create mixed lhs matrix
+        A = diags([-theta*s, (1+2*theta*s), -theta*s], [2, 1, 0],
+                    shape=(n-1, n)).toarray()
+        A[0,0] = 0
+        A[-1,-2] *= 2
+        # create rhs matrix
+        B = diags([alpha*s, (1-2*alpha*s), alpha*s], [2, 1, 0],
+                    shape=(n-1, n)).toarray()
+        B[-1,-2] *= 2
+        print(B)
+        
+        for i, t in enumerate(t):
+            if i == 0:
+                B[1,0] = s*alpha
+            else:
+                B[1,0] = 0
+            un = u.copy()
+            u_rhs = numpy.dot(B, un)
+            u = lsqr(A, u_rhs)[0]
 
     return u
 
@@ -159,15 +214,15 @@ u3 = u_0.copy()
 # apply forward solver
 u_forward = diff_forward(u1, t, dt, dx, bd='Mixed')
 u_center = diff_center(u2, t, dt, dx, bd='Mixed')
-# u_cn = diff_crank_nicolson(u3, t, dt, dx)
+u_cn = diff_crank_nicolson(u3, t, dt, dx, theta=0.0, bd='Mixed')
 
 # plot to initial conditions and forward solution
 size = 10
 pyplot.figure(figsize=(size, size))
 pyplot.plot(x, u_0, label="$\\phi(x)$")
 pyplot.plot(x, u_forward, label="$u(x,3)$ forward")
-pyplot.plot(x, u_center, label="$u(x,3)$ center")
-# pyplot.plot(x, u_cn, label="$u(x,3)$ Crank-Nicolson")
+#pyplot.plot(x, u_center, label="$u(x,3)$ center")
+pyplot.plot(x, u_cn, label="$u(x,3)$ Crank-Nicolson")
 pyplot.xlim(xmin=x_start, xmax=x_end)
 pyplot.ylim(ymin=0, ymax=30)
 pyplot.legend()
