@@ -3,6 +3,8 @@ author: Noah
 
 Dirichlet wave equation!
 u_tt = u_xx
+
+Here we use a forward difference scheme for the approximation of u_tt
 '''
 import numpy as np
 from matplotlib import pyplot as plt
