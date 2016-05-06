@@ -10,8 +10,8 @@ import matplotlib.animation as animation
 
 dt = 0.5
 dx = 1.0
-c = 1
-s = c**2 * dt**2 / dx**2
+c = 2
+s = c**2 * dt**2 / dx**2 # s is now = 1, so this is an unstable scheme
 
 x_start, x_end = 0.0, 5.0  # x-bounds
 t_start, t_end = 0.0, 20.0  # t-bounds

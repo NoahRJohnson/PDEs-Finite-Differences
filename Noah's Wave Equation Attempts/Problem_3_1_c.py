@@ -31,8 +31,11 @@ def phi_j(j): #initial condition: u(x,0)
 def psi_j(j): #initial velocity: du/dt(x,0)
     return 0
 
+def b(j):
+    return 
 
-def initial_u(X, T):
+
+def initial_u():
     """
     Creates initial condition of wave equation
     """
@@ -42,13 +45,29 @@ def initial_u(X, T):
     for j in range(J):   
         u[0,j] = phi_j(j)
 
-    # the second row
-    for j in range(1,J-1):  # exclude edge points due to (j-1) and (j+1) terms, which enforces dirichlet condition
-        u[1,j] = (s/float(2)) * (phi_j(j+1) + phi_j(j-1)) + (1-s)*phi_j(j) + psi_j(j)*dt
+    # the second row -- have to solve system of equations -- assumes dirichlet conditions
+    alpha = 2*s+1
+    beta = -s
+    A = np.zeros((J-2,J-2))
+    for j in range(J-2):
+        if (j-1 >= 1):
+            A[j,j-1] = beta
+        A[j,j] = alpha
+        if (j+1 <= J-4):
+            A[j,j+1] = beta
+    
+    B = np.ndarray((J-2,1))
+    for j in range(1,J-2):
+        B[j-1] = (-2*s*dt*(psi_j(j+1) + psi_j(j-1)) + (4*s+2)*dt*phi_j(j) + 2*phi_j(j))
+        
+    X = np.linalg.solve(A,B)
+    
+    for j in range(1, J-2):
+        u[1,j] = X[j-1]
     
     return u
 
-u = initial_u(X,T)
+u = initial_u()
 
 # plot first two rows to confirm initial conditions
 fig = plt.figure()
@@ -74,13 +93,13 @@ def picard_engage(u, s, J, N):
     J -- total number of discrete x-axis points
     N -- total number of discrete t-axis points
     """
-    for n in range(1,N-1):
+    for n in range(N-2):
         for j in range(1, J - 1):
-            u[n+1,j] = s*(u[n,j+1] + u[n,j-1]) + 2*(1-s)*u[n,j] - u[n-1,j]
+            u[n+2,j] = s*(u[n,j+1] + u[n,j-1]) - (2*s+1)*u[n,j] + 2*u[n+1,j]
 
         #enforce boundary conditions
-        u[n+1,0] = 0
-        u[n+1,J-1] = 0
+        u[n+2,0] = 0
+        u[n+2,J-1] = 0
     
     return u
 
@@ -88,7 +107,7 @@ u = picard_engage(u, s, J, N)
 
 # Create an animation of the solution as time elapses
 fig, ax = plt.subplots()
-ax.set_ylim([-30,30])
+ax.set_ylim([-max(u.flatten()),max(u.flatten())])
 #ax.set_autoscale_on(False)
 ax.set_xlabel('X')
 ax.set_ylabel('u')
