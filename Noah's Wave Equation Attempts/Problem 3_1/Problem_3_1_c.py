@@ -62,7 +62,7 @@ def initial_u():
         
     X = np.linalg.solve(A,B)
     
-    for j in range(1, J-2):
+    for j in range(1, J-1):
         u[1,j] = X[j-1]
     
     return u
@@ -107,7 +107,7 @@ u = picard_engage(u, s, J, N)
 
 # Create an animation of the solution as time elapses
 fig, ax = plt.subplots()
-ax.set_ylim([-max(u.flatten()),max(u.flatten())])
+ax.set_ylim([min(u.flatten()),max(u.flatten())])
 #ax.set_autoscale_on(False)
 ax.set_xlabel('X')
 ax.set_ylabel('u')

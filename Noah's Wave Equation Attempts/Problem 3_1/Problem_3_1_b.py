@@ -86,7 +86,7 @@ u = picard_engage(u, s, J, N)
 
 # Create an animation of the solution as time elapses
 fig, ax = plt.subplots()
-ax.set_ylim([-max(u.flatten()),max(u.flatten())])
+ax.set_ylim([min(u.flatten()),max(u.flatten())])
 #ax.set_autoscale_on(False)
 ax.set_xlabel('X')
 ax.set_ylabel('u')
