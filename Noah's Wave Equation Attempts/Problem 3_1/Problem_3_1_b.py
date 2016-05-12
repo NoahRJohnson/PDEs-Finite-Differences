@@ -8,10 +8,10 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.animation as animation
 
-dt = 0.5
-dx = 1.0
-c = 2
-s = c**2 * dt**2 / dx**2 # s is now = 1, so this is an unstable scheme
+dt = 0.25
+dx = 0.25
+c = 1
+s = c**2 * dt**2 / dx**2
 
 x_start, x_end = 0.0, 5.0  # x-bounds
 t_start, t_end = 0.0, 20.0  # t-bounds
@@ -86,7 +86,7 @@ u = picard_engage(u, s, J, N)
 
 # Create an animation of the solution as time elapses
 fig, ax = plt.subplots()
-ax.set_ylim([-max(u.flatten()),max(u.flatten())])
+ax.set_ylim([min(u.flatten()),max(u.flatten())])
 #ax.set_autoscale_on(False)
 ax.set_xlabel('X')
 ax.set_ylabel('u')
@@ -106,4 +106,16 @@ ani = animation.FuncAnimation(fig, animate, N, init_func=init,
                               interval=20000/N, blit=False, repeat=False)
 plt.show()
 
-print "u(3,3) = %f" % u[T.tolist().index(3),X.tolist().index(3)]
+ani.save('3_1_b.mp4')
+
+# Show (3,3) point in space-time
+fig = plt.figure()
+
+ax1 = fig.add_subplot(111)
+ax1.set_title("Time = 3; u(3,3) = %f" % u[T.tolist().index(3),X.tolist().index(3)])
+ax1.set_xlabel('X')
+ax1.set_ylabel('u')
+ax1.plot(u[T.tolist().index(3),:])
+
+plt.show()
+plt.savefig('3_1_b.jpg')
