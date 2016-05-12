@@ -1,7 +1,10 @@
 #!/Users/edelsonc/anaconda/bin/python
-"""Implementation of finite difference method to numerically solve the diffusion
-equation with Dirichlet Boundary Conditions. Contains a FTCS and CTCS 
-implentation."""
+"""
+Implementation of finite difference methods to numerically solve the diffusion
+equation. A Forward Time Centered Space (FTCS), Centered Time Centered Space
+(CTCS), and a Crank-Nicolson scheme are solved for with Dirichlet, Neumann, or
+Mixed boundary conditions.
+"""
 import numpy
 from numpy.linalg import solve
 from scipy.sparse import diags
