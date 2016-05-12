@@ -142,4 +142,16 @@ ani = animation.FuncAnimation(fig, animate, N, init_func=init,
                               interval=10000/N, blit=False, repeat=False)
 plt.show()
 
-print "u(3,3) = %f" % u[T.tolist().index(3),X.tolist().index(3)]
+ani.save('3_2_c.mp4')
+
+# Show (3,3) point in space-time
+fig = plt.figure()
+
+ax1 = fig.add_subplot(111)
+ax1.set_title("Time = 3; u(3,3) = %f" % u[T.tolist().index(3),X.tolist().index(3)])
+ax1.set_xlabel('X')
+ax1.set_ylabel('u')
+ax1.plot(u[T.tolist().index(3),:])
+
+plt.show()
+plt.savefig('3_2_c.jpg')

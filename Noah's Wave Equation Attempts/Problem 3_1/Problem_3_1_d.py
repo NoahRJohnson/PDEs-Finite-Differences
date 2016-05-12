@@ -14,7 +14,7 @@ c = 2
 s = c**2 * dt**2 / dx**2 # s is now = 1, so this is an unstable scheme
 
 x_start, x_end = 0.0, 5.0  # x-bounds
-t_start, t_end = 0.0, 20.0  # t-bounds
+t_start, t_end = 0.0, 6.0  # t-bounds
 
 X = np.arange(x_start, x_end + dx, dx)  # 1D x dimension
 T = np.arange(t_start, t_end + dt, dt)  # 1D t dimension
@@ -103,7 +103,19 @@ def init():
     return wave,
 
 ani = animation.FuncAnimation(fig, animate, N, init_func=init,
-                              interval=20000/N, blit=False, repeat=False)
+                              interval=6000/N, blit=False, repeat=False)
 plt.show()
 
-print "u(3,3) = %f" % u[T.tolist().index(3),X.tolist().index(3)]
+ani.save('3_1_d.mp4')
+
+# Show (3,3) point in space-time
+fig = plt.figure()
+
+ax1 = fig.add_subplot(111)
+ax1.set_title("Time = 3; u(3,3) = %f" % u[T.tolist().index(3),X.tolist().index(3)])
+ax1.set_xlabel('X')
+ax1.set_ylabel('u')
+ax1.plot(u[T.tolist().index(3),:])
+
+plt.show()
+plt.savefig('3_1_d.jpg')
